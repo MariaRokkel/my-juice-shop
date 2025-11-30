@@ -21,40 +21,183 @@ jobs:
         run: |
           trivy fs . --format cyclonedx --output sbom.cyclonedx.json
 
-      - name: 🔍 Run security scan and generate reports
+      - name: 🔍 Run security scan and generate JSON
         run: |
-          # Генерируем JSON отчет
           trivy fs . --format json --output trivy-results.json --exit-code 0
-          
-          # Создаем красивый HTML отчет вручную
-          echo '<!DOCTYPE html>
-          <html>
+
+      - name: 📋 Create professional HTML report
+        run: |
+          # Создаем профессиональный HTML отчет
+          cat > trivy-report.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
           <head>
-              <title>Security Scan Report</title>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Security Scan Report - Juice Shop</title>
               <style>
-                  body { font-family: Arial, sans-serif; margin: 40px; }
-                  .vulnerability { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
-                  .critical { background-color: #ffebee; border-left: 4px solid #f44336; }
-                  .high { background-color: #fff3e0; border-left: 4px solid #ff9800; }
-                  .medium { background-color: #fff8e1; border-left: 4px solid #ffc107; }
-                  .low { background-color: #f1f8e9; border-left: 4px solid #8bc34a; }
-                  h1 { color: #333; }
-                  .severity { font-weight: bold; padding: 3px 8px; border-radius: 3px; display: inline-block; }
-                  .severity-CRITICAL { background-color: #f44336; color: white; }
-                  .severity-HIGH { background-color: #ff9800; color: white; }
+                  * { box-sizing: border-box; margin: 0; padding: 0; }
+                  body { 
+                      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                      line-height: 1.6; 
+                      color: #333; 
+                      background-color: #f5f5f5; 
+                      padding: 20px;
+                  }
+                  .container { 
+                      max-width: 1200px; 
+                      margin: 0 auto; 
+                      background: white; 
+                      border-radius: 10px; 
+                      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+                      padding: 30px;
+                  }
+                  .header { 
+                      text-align: center; 
+                      margin-bottom: 30px; 
+                      padding-bottom: 20px; 
+                      border-bottom: 2px solid #eaeaea;
+                  }
+                  .header h1 { 
+                      color: #2c3e50; 
+                      margin-bottom: 10px;
+                  }
+                  .summary { 
+                      background: #f8f9fa; 
+                      padding: 20px; 
+                      border-radius: 8px; 
+                      margin-bottom: 30px;
+                  }
+                  .vulnerability-table {
+                      width: 100%;
+                      border-collapse: collapse;
+                      margin-top: 20px;
+                  }
+                  .vulnerability-table th,
+                  .vulnerability-table td {
+                      padding: 12px 15px;
+                      text-align: left;
+                      border-bottom: 1px solid #ddd;
+                  }
+                  .vulnerability-table th {
+                      background-color: #2c3e50;
+                      color: white;
+                      font-weight: 600;
+                  }
+                  .vulnerability-table tr:hover {
+                      background-color: #f5f5f5;
+                  }
+                  .severity-badge {
+                      padding: 4px 8px;
+                      border-radius: 4px;
+                      font-weight: bold;
+                      font-size: 0.8em;
+                  }
+                  .severity-CRITICAL { background-color: #dc3545; color: white; }
+                  .severity-HIGH { background-color: #fd7e14; color: white; }
                   .severity-MEDIUM { background-color: #ffc107; color: black; }
-                  .severity-LOW { background-color: #8bc34a; color: white; }
+                  .severity-LOW { background-color: #28a745; color: white; }
+                  .severity-UNKNOWN { background-color: #6c757d; color: white; }
+                  .timestamp { 
+                      color: #666; 
+                      font-style: italic; 
+                      margin-top: 10px;
+                  }
               </style>
           </head>
           <body>
-          <h1>🔒 Security Scan Report - Juice Shop</h1>
-          <p>Generated on: '$(date)'</p>' > trivy-report.html
+              <div class="container">
+                  <div class="header">
+                      <h1>🔒 Security Scan Report</h1>
+                      <h2>OWASP Juice Shop</h2>
+                      <div class="timestamp">Generated on: $(date)</div>
+                  </div>
+                  
+                  <div class="summary">
+                      <h3>📊 Scan Summary</h3>
+                      <p>This report contains security vulnerabilities identified by Trivy scanner.</p>
+                  </div>
 
-          # Добавляем информацию о сканировании
-          echo '<h2>Scan Summary</h2>' >> trivy-report.html
-          trivy fs . --format table >> trivy-report.html
+                  <h3>📋 Detected Vulnerabilities</h3>
+                  <table class="vulnerability-table">
+                      <thead>
+                          <tr>
+                              <th>Severity</th>
+                              <th>Vulnerability ID</th>
+                              <th>Package</th>
+                              <th>Version</th>
+                              <th>Description</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+          EOF
 
-          echo '</body></html>' >> trivy-report.html
+          # Добавляем данные из JSON отчета (если есть уязвимости)
+          if [ -f "trivy-results.json" ]; then
+              echo "<!-- Vulnerabilities will be listed here -->" >> trivy-report.html
+          else
+              echo "<tr><td colspan='5' style='text-align: center;'>No vulnerabilities found</td></tr>" >> trivy-report.html
+          fi
+
+          cat >> trivy-report.html << 'EOF'
+                      </tbody>
+                  </table>
+
+                  <div style="margin-top: 40px; padding: 20px; background: #e8f4fd; border-radius: 8px;">
+                      <h3>ℹ️ About This Report</h3>
+                      <p>This security scan was performed using <strong>Trivy</strong> vulnerability scanner.</p>
+                      <p><strong>SBOM Generated:</strong> CycloneDX format</p>
+                      <p><strong>Scan Date:</strong> $(date)</p>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+          # Если есть JSON с результатами, парсим его и добавляем в таблицу
+          if [ -f "trivy-results.json" ]; then
+              # Создаем временный файл с таблицей уязвимостей
+              python3 << 'PYTHON_SCRIPT' > temp_vulns.html
+          import json
+          import html
+
+          try:
+              with open('trivy-results.json', 'r') as f:
+                  data = json.load(f)
+              
+              vulnerabilities_found = False
+              
+              for result in data.get('Results', []):
+                  for vuln in result.get('Vulnerabilities', []):
+                      vulnerabilities_found = True
+                      severity = vuln.get('Severity', 'UNKNOWN')
+                      vuln_id = vuln.get('VulnerabilityID', 'N/A')
+                      pkg_name = vuln.get('PkgName', 'N/A')
+                      version = vuln.get('InstalledVersion', 'N/A')
+                      description = vuln.get('Description', 'No description available')
+                      
+                      # Экранируем HTML символы
+                      description = html.escape(description)
+                      
+                      print(f'''<tr>
+                          <td><span class="severity-badge severity-{severity}">{severity}</span></td>
+                          <td><code>{vuln_id}</code></td>
+                          <td><strong>{pkg_name}</strong></td>
+                          <td>{version}</td>
+                          <td>{description[:200]}{'...' if len(description) > 200 else ''}</td>
+                      </tr>''')
+              
+              if not vulnerabilities_found:
+                  print('<tr><td colspan="5" style="text-align: center;">✅ No security vulnerabilities detected</td></tr>')
+                  
+          except Exception as e:
+              print(f'<tr><td colspan="5" style="text-align: center; color: red;">Error parsing vulnerabilities: {str(e)}</td></tr>')
+          PYTHON_SCRIPT
+
+              # Вставляем уязвимости в HTML отчет
+              sed -i '/<!-- Vulnerabilities will be listed here -->/r temp_vulns.html' trivy-report.html
+              sed -i '/<!-- Vulnerabilities will be listed here -->/d' trivy-report.html
+          fi
 
       - name: 📦 Upload security reports
         uses: actions/upload-artifact@v4
