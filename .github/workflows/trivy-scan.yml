@@ -23,17 +23,23 @@ jobs:
         run: |
           trivy fs . --format cyclonedx --output sbom.cyclonedx.json
 
-      - name: 🔍 Scan for vulnerabilities
+      - name: 📋 Generate HTML report using template
         run: |
+          # Скачиваем HTML шаблон
+          mkdir -p contrib
+          curl -sL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -o contrib/html.tpl
+          
+          # Генерируем отчет используя шаблон
           trivy fs . \
-            --format html \
-            --output trivy-vulnerability-report.html \
+            --format template \
+            --template "contrib/html.tpl" \
+            --output trivy-report.html \
             --severity CRITICAL,HIGH,MEDIUM \
             --exit-code 0
 
-      - name: 📋 Show scan summary
+      - name: 📊 Generate table report for logs
         run: |
-          trivy fs . --format table --severity CRITICAL,HIGH
+          trivy fs . --format table --severity CRITICAL,HIGH,MEDIUM --exit-code 0
 
       - name: 📦 Upload security reports
         uses: actions/upload-artifact@v4
@@ -41,5 +47,5 @@ jobs:
           name: security-reports
           path: |
             sbom.cyclonedx.json
-            trivy-vulnerability-report.html
+            trivy-report.html
           retention-days: 30
