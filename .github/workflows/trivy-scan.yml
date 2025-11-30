@@ -3,12 +3,10 @@ name: 🔒 Security Scan with Trivy
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   security-scan:
-    name: SBOM Generation & Vulnerability Scan
+    name: SBOM & Vulnerability Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -23,23 +21,40 @@ jobs:
         run: |
           trivy fs . --format cyclonedx --output sbom.cyclonedx.json
 
-      - name: 📋 Generate HTML report using template
+      - name: 🔍 Run security scan and generate reports
         run: |
-          # Скачиваем HTML шаблон
-          mkdir -p contrib
-          curl -sL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl -o contrib/html.tpl
+          # Генерируем JSON отчет
+          trivy fs . --format json --output trivy-results.json --exit-code 0
           
-          # Генерируем отчет используя шаблон
-          trivy fs . \
-            --format template \
-            --template "contrib/html.tpl" \
-            --output trivy-report.html \
-            --severity CRITICAL,HIGH,MEDIUM \
-            --exit-code 0
+          # Создаем красивый HTML отчет вручную
+          echo '<!DOCTYPE html>
+          <html>
+          <head>
+              <title>Security Scan Report</title>
+              <style>
+                  body { font-family: Arial, sans-serif; margin: 40px; }
+                  .vulnerability { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                  .critical { background-color: #ffebee; border-left: 4px solid #f44336; }
+                  .high { background-color: #fff3e0; border-left: 4px solid #ff9800; }
+                  .medium { background-color: #fff8e1; border-left: 4px solid #ffc107; }
+                  .low { background-color: #f1f8e9; border-left: 4px solid #8bc34a; }
+                  h1 { color: #333; }
+                  .severity { font-weight: bold; padding: 3px 8px; border-radius: 3px; display: inline-block; }
+                  .severity-CRITICAL { background-color: #f44336; color: white; }
+                  .severity-HIGH { background-color: #ff9800; color: white; }
+                  .severity-MEDIUM { background-color: #ffc107; color: black; }
+                  .severity-LOW { background-color: #8bc34a; color: white; }
+              </style>
+          </head>
+          <body>
+          <h1>🔒 Security Scan Report - Juice Shop</h1>
+          <p>Generated on: '$(date)'</p>' > trivy-report.html
 
-      - name: 📊 Generate table report for logs
-        run: |
-          trivy fs . --format table --severity CRITICAL,HIGH,MEDIUM --exit-code 0
+          # Добавляем информацию о сканировании
+          echo '<h2>Scan Summary</h2>' >> trivy-report.html
+          trivy fs . --format table >> trivy-report.html
+
+          echo '</body></html>' >> trivy-report.html
 
       - name: 📦 Upload security reports
         uses: actions/upload-artifact@v4
@@ -47,5 +62,6 @@ jobs:
           name: security-reports
           path: |
             sbom.cyclonedx.json
+            trivy-results.json
             trivy-report.html
           retention-days: 30
