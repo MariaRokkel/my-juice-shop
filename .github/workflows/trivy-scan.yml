@@ -13,21 +13,20 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
+      - name: 🟢 Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          # Убираем cache, так как нет lock-файла
+          node-version: '20'
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install ONLY dependencies (skip build)
         run: |
-          # Устанавливаем зависимости и создаем package-lock.json
-          npm install --package-lock
+          # Устанавливаем только зависимости, пропускаем сборку
+          npm install --ignore-scripts --no-audit
 
       - name: 🔧 Install Trivy
         run: |
