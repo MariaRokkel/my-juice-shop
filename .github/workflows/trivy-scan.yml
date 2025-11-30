@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          # Убираем cache, так как нет lock-файла
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v4
@@ -26,7 +26,8 @@ jobs:
 
       - name: 📦 Install dependencies
         run: |
-          npm install
+          # Устанавливаем зависимости и создаем package-lock.json
+          npm install --package-lock
 
       - name: 🔧 Install Trivy
         run: |
